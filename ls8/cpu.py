@@ -7,34 +7,39 @@ class CPU:
     LDI = 0b10000010
     HLT = 0b00000001
     PRN = 0b01000111
+    MUL = 0b10100010
 
     def __init__(self):
         """Construct a new CPU."""
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
-        self.running = True
+        self.running = False
 
-    def load(self):
+    def load(self, filename):
         """Load a program into memory."""
 
-        address = 0
-
         # For now, we've just hardcoded a program:
+        try:
+            address = 0
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+            with open(filename) as f:
+                for line in f:
+                    comment_split = line.split('#')
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+                    num = comment_split[0].strip()
+
+                    if num != "":
+                        continue
+                    val = int(num, 2)
+
+                    self.ram[address] = val
+
+                    address += 1
+        except FileNotFoundError:
+            print(f"{sys.argv[0]}: {filename} not found")
+            sys.exit(2)
+
 
 
     def alu(self, op, reg_a, reg_b):
