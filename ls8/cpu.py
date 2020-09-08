@@ -16,6 +16,12 @@ class CPU:
         self.pc = 0
         self.running = False
 
+    def ram_write(self, mdr, mar):
+        self.ram[mar] = mdr
+
+    def ram_read(self, mar):
+        return self.ram[mar]
+
     def load(self, filename):
         """Load a program into memory."""
 
@@ -47,6 +53,9 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
+
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -73,25 +82,41 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        while self.running:
-            ir = self.ram_read(self.pc)
-            if ir == self.LDI:
-                reg_num = self.ram_read(self.pc + 1)
-                value = self.ram_read(self.pc + 2)
-                self.ram_write(reg_num, value)
-                self.pc += 3
-            elif ir == self.HLT:
-                self.running = False
+        while not self.running:
+            ir = self.ram[self.pc]
+            instruction_len = ((ir >> 6) & 0b11) + \
+                1
+            reg_num = self.ram_read(self.pc + 1)
+            value = self.ram_read(self.pc + 2)
+
+            if ir == self.HLT:
+                self.running = True
+
+            elif ir == self.LDI:
+                self.reg[reg_num] = value
+
             elif ir == self.PRN:
-                reg_num = self.ram[self.pc + 1]
-                print(self.ram[reg_num])
-                self.pc += 2
-            else:
-                print(f'No instructions')
-                sys.exit(1) 
+                print(self.reg[reg_num])
 
-    def ram_read(self, address):
-        return self.ram[address]
+            elif ir == self.MUL:
+                self.alu("MUL", reg_num, value)
+            
+            self.pc += instruction_len
 
-    def ram_write(self, address, value):
-        self.ram[address] = value
+        # while self.running:
+        #     ir = self.ram_read(self.pc)
+        #     if ir == self.LDI:
+        #         reg_num = self.ram_read(self.pc + 1)
+        #         value = self.ram_read(self.pc + 2)
+        #         self.ram_write(reg_num, value)
+        #         self.pc += 3
+        #     elif ir == self.HLT:
+        #         self.running = False
+        #     elif ir == self.PRN:
+        #         reg_num = self.ram[self.pc + 1]
+        #         print(self.ram[reg_num])
+        #         self.pc += 2
+        #     else:
+        #         print(f'No instructions')
+        #         sys.exit(1) 
+
