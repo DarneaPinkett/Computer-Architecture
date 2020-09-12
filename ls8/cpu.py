@@ -8,8 +8,17 @@ PRN = 0b01000111
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
+CALL = 0b0101000
+ADD = 0b10100000
+RET = 0b00010001
+SUB = 0b10100001
+CMP = 0b10100111
 
 SP = 7
+
+LT = 0b00000100
+GT = 0b00000010
+EQ = 0b00000001
 
 class CPU:
     """Main CPU class."""
@@ -20,7 +29,9 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
-        self.running = False
+        self.halted = False
+        self.flag_reg = [0] * 8
+        self.SP = 0xf3
 
     def ram_write(self, mdr, mar):
         self.ram[mar] = mdr
@@ -68,6 +79,17 @@ class CPU:
         
         elif op == "DIV":
             self.reg[reg_a] //= self.reg[reg_b]
+
+        elif op == "CMP":
+            a = self.reg[reg_a]
+            b = self.reg[reg_b]
+
+            if a == b:
+                self.EQ, self.LT, self.GT = (1, 0, 0)
+            elif a < b:
+                self.EQ, self.LT, self.GT =(0, 1, 0)
+            elif a > b:
+                self.EQ, self.LT, self.GT = (0, 0, 1)
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -96,11 +118,11 @@ class CPU:
         """Run the CPU."""
         while not self.halted:
             ir = self.ram[self.pc]
-            instuct_length = ((ir >> 6) & 0b11) + 1
+            instruct_length = ((ir >> 6) & 0b11) + 1
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
 
-            if ir = HLT:
+            if ir == HLT:
                 self.halted = True
 
             elif ir == LDI:
@@ -108,6 +130,34 @@ class CPU:
 
             elif ir == PRN:
                 print(self.reg[operand_a])
+
+            elif ir == MUL:
+                self.alu("MUL", operand_a, operand_b)
+
+                self.pc += instruct_length
+            
+            elif ir == SUB:
+                self.alu("SUB", operand_a, operand_b)
+
+            elif ir == ADD:
+                self.alu("ADD", operand_a, operand_b)
+
+            elif ir == CALL:
+                operand_b = self.ram_read(self.pc + 1)
+
+                self.ram_write(self.SP, self.pc + 2)
+                self.SP -= 1
+
+                self.pc = self.reg[operand_a]
+
+            elif ir == RET:
+                self.PC = self.ram_read(self.SP + 1)
+                self.SP += 1
+
+            elif ir == CMP:
+                a = self.reg[operand_a]
+                b = self.reg[operand_b]
+                self.alu("CMP", a, b)
 
             elif ir == PUSH:
                 reg = self.ram[self.pc + 1]
