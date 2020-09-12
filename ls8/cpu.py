@@ -14,6 +14,7 @@ RET = 0b00010001
 SUB = 0b10100001
 CMP = 0b10100111
 JMP = 0b01010100
+JEQ = 0b01010101
 
 SP = 7
 
@@ -164,6 +165,12 @@ class CPU:
                 operand_a = self.ram_read(self.pc +1)
 
                 self.PC = self.reg[operand_a]
+
+            elif ir == JEQ:
+                if self.flag_reg[EQ] == 1:
+                    self.pc = self.reg[operand_a]
+                else:
+                    self.pc += 2
 
             elif ir == PUSH:
                 reg = self.ram[self.pc + 1]
