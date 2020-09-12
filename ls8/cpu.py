@@ -1,13 +1,18 @@
 """CPU functionality."""
 
 import sys
-
-class CPU:
-    """Main CPU class."""
     LDI = 0b10000010
     HLT = 0b00000001
     PRN = 0b01000111
     MUL = 0b10100010
+    PUSH = 0b01000101
+    POP = 0b01000110
+
+SP = 7
+
+class CPU:
+    """Main CPU class."""
+
 
     def __init__(self):
         """Construct a new CPU."""
@@ -53,9 +58,15 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
+        
+        elif op == "SUB":
+            self.reg[reg_a] -= self.reg[reg_b]
 
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
+        
+        elif op == "DIV":
+            self.reg[reg_a] //= self.reg[reg_b]
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -82,26 +93,66 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        while not self.running:
+        while not self.halted:
             ir = self.ram[self.pc]
-            instruction_len = ((ir >> 6) & 0b11) + \
-                1
-            reg_num = self.ram_read(self.pc + 1)
-            value = self.ram_read(self.pc + 2)
+            instuct_length = ((ir >> 6) & 0b11) + 1
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
 
-            if ir == self.HLT:
-                self.running = True
+            if ir = HLT:
+                self.halted = True
 
-            elif ir == self.LDI:
-                self.reg[reg_num] = value
+            elif ir == LDI:
+                self.reg[operand_a] = operand_b
 
-            elif ir == self.PRN:
-                print(self.reg[reg_num])
+            elif ir == PRN:
+                print(self.reg[operand_a])
 
-            elif ir == self.MUL:
-                self.alu("MUL", reg_num, value)
+            elif ir == PUSH:
+                reg = self.ram[self.pc + 1]
+                val = self.reg[reg]
+
+                self.reg[SP] -= 1
+
+                self.ram[self.reg[SP]] = val
+                self.pc += 2
+
+            elif ir == POP:
+                reg = self.ram[self.pc + 1]
+                val = self.ram[self.reg[SP]]
+
+                self.reg[reg] = val
+
+                self.reg[SP] += 1
+                self.pc += 2
             
-            self.pc += instruction_len
+            elif ir == HLT:
+                sys.exit(0)
+
+            else:
+                print(f"I did not understand that command: {ir}")
+                sys.exit(1)
+
+        # while not self.running:
+        #     ir = self.ram[self.pc]
+        #     instruction_len = ((ir >> 6) & 0b11) + \
+        #         1
+        #     reg_num = self.ram_read(self.pc + 1)
+        #     value = self.ram_read(self.pc + 2)
+
+        #     if ir == self.HLT:
+        #         self.running = True
+
+        #     elif ir == self.LDI:
+        #         self.reg[reg_num] = value
+
+        #     elif ir == self.PRN:
+        #         print(self.reg[reg_num])
+
+        #     elif ir == self.MUL:
+        #         self.alu("MUL", reg_num, value)
+            
+        #     self.pc += instruction_len
 
         # while self.running:
         #     ir = self.ram_read(self.pc)
