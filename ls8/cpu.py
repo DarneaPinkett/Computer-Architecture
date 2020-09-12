@@ -13,6 +13,7 @@ ADD = 0b10100000
 RET = 0b00010001
 SUB = 0b10100001
 CMP = 0b10100111
+JMP = 0b01010100
 
 SP = 7
 
@@ -158,6 +159,11 @@ class CPU:
                 a = self.reg[operand_a]
                 b = self.reg[operand_b]
                 self.alu("CMP", a, b)
+
+            elif ir == JMP:
+                operand_a = self.ram_read(self.pc +1)
+
+                self.PC = self.reg[operand_a]
 
             elif ir == PUSH:
                 reg = self.ram[self.pc + 1]
